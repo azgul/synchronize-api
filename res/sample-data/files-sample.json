@@ -1,0 +1,10 @@
+[
+	{"id": 1, "name": "HP 100 CMR optimisation data", "file": "ds100c01gb14.pdf",
+	"version": "1.0", "author": "Hamlet Protein", "category": 6, 
+	"description": "Datasheet for HP 100 CMR optimisation data",
+	"tags": ["HP 100", "optimisation"], "language": "en-GB"},
+	{"id": 2, "name": "HP 100 MAT Optimierungsdaten", "file": "ds100c01d08.pdf",
+	"version": "1.0", "author": "Hamlet Protein", "category": 6, 
+	"description": "Datenblatt zur HP 100 MAT Optimierungsdaten",
+	"tags": ["HP 100", "optimierungsdaten"], "language": "de-DE"}
+]
