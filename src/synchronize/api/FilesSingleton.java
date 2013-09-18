@@ -1,11 +1,14 @@
 package synchronize.api;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import synchronize.model.SyncFile;
 
@@ -39,10 +42,18 @@ public class FilesSingleton {
 	}
 	
 	public static void main(String[] args) {
-		Map<String,SyncFile> map = FilesSingleton.getInstance().getFileMap();
-		for(Map.Entry<String,SyncFile> entry : map.entrySet()) {
-			System.out.println(entry.getKey());
+		String appHome = System.getProperty("app.home");
+		Properties props = new Properties();
+		Path home = FileSystems.getDefault().getPath(appHome);
+		Path config = home.resolve("config");
+		Path configFile = config.resolve("config.properties");
+		
+		try {
+			props.load(Files.newInputStream(configFile, StandardOpenOption.READ));
+			System.out.println("We loaded the config file!");
+		} catch(IOException e) {
+			System.err.println("Could not read properties file.");
 		}
-		System.out.println(map.get("ds100c01gb14.pdf").getName());
+
 	}
 }
