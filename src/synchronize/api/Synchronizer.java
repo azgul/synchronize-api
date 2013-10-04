@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -22,9 +23,11 @@ import synchronize.model.SyncFile;
 
 import com.google.gson.Gson;
 
-public class FilesSingleton {
+public class Synchronizer {
 	
 	private static ScheduledExecutorService executor;
+	
+	private Properties properties;
 	
 	private SyncFile[] parseJSON() {
 		Gson gson = new Gson();
@@ -37,10 +40,10 @@ public class FilesSingleton {
 		}
 	}
 	
-	private static FilesSingleton instance;
-	public static FilesSingleton getInstance() {
+	private static Synchronizer instance;
+	public static Synchronizer getInstance() {
 		if(instance == null)
-			instance = new FilesSingleton();
+			instance = new Synchronizer();
 		return instance;
 	}
 	
@@ -52,14 +55,31 @@ public class FilesSingleton {
 		return map;
 	}
 	
+	private Path dataPath;
+	public Path getDataPath() {
+		if(dataPath == null)
+			dataPath = FileSystems.getDefault().getPath(properties.getProperty("dataPath"));
+		
+		return dataPath;
+	}
+	
+	public Path getJsonPath() { return getDataPath().resolve("json"); }
+	
+	public Path getFilesPath() { return getJsonPath().resolve("files.json"); }
+	
+	public Path getCategoriesPath() { return getJsonPath().resolve("categories.json"); }
+	
+	public String getJsonFilesURL() { return properties.getProperty("jsonFilesUrl"); }
+	
+	public String getJsonCategoriesURL() { return properties.getProperty("jsonCatgoriesUrl"); }
+	
 	public static void debug(String str) {
 		Date date = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		System.out.println(formatter.format(date) + ": " + str);
 	}
 	
-	public static void main(String[] args) {
-		
+	private Synchronizer() {
 		String appHome = System.getProperty("app.home");
 		Properties props = new Properties();
 		Path home = FileSystems.getDefault().getPath(appHome);
@@ -68,17 +88,27 @@ public class FilesSingleton {
 		
 		try {
 			props.load(Files.newInputStream(configFile, StandardOpenOption.READ));
-			FilesSingleton.debug("Config file loaded.");
+			Synchronizer.debug("Config file loaded.");
 		} catch(IOException e) {
 			System.err.println("Could not read properties file");
 		}
-		
-		Path data = FileSystems.getDefault().getPath(props.getProperty("dataPath"));
-		TrayHandler.addTrayIcon(data);
+	}
+	
+	public static void main(String[] args) {
+		TrayHandler.addTrayIcon();
 		
 		executor =
 			    Executors.newSingleThreadScheduledExecutor();
-		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(props), 0, 10, TimeUnit.MINUTES);
+		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(), 0, 10, TimeUnit.MINUTES);
+		
+		ExecutorService watchExec = Executors.newSingleThreadExecutor();
+		try {
+			JsonWatcher watcher = new JsonWatcher();
+			watchExec.execute(watcher);
+		} catch(IOException e) {
+			System.err.println("Could not fetch watcher service");
+			e.printStackTrace();
+		}
 		
 		try {
 			future.get();
@@ -89,7 +119,7 @@ public class FilesSingleton {
 			System.err.println("Interrupted...");
 			e.printStackTrace();
 		} catch (CancellationException e) {
-			FilesSingleton.debug("Cancelled future tasks.");
+			Synchronizer.debug("Cancelled future tasks.");
 		}
 	}
 	
