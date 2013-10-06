@@ -28,6 +28,7 @@ public class Synchronizer {
 	private static ScheduledExecutorService executor;
 	
 	private Properties properties;
+	private PathConfiguration paths;
 	
 	private SyncFile[] parseJSON() {
 		Gson gson = new Gson();
@@ -55,24 +56,6 @@ public class Synchronizer {
 		return map;
 	}
 	
-	private Path dataPath;
-	public Path getDataPath() {
-		if(dataPath == null)
-			dataPath = FileSystems.getDefault().getPath(properties.getProperty("dataPath"));
-		
-		return dataPath;
-	}
-	
-	public Path getJsonPath() { return getDataPath().resolve("json"); }
-	
-	public Path getFilesPath() { return getJsonPath().resolve("files.json"); }
-	
-	public Path getCategoriesPath() { return getJsonPath().resolve("categories.json"); }
-	
-	public String getJsonFilesURL() { return properties.getProperty("jsonFilesUrl"); }
-	
-	public String getJsonCategoriesURL() { return properties.getProperty("jsonCatgoriesUrl"); }
-	
 	public static void debug(String str) {
 		Date date = new Date();
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -81,29 +64,30 @@ public class Synchronizer {
 	
 	private Synchronizer() {
 		String appHome = System.getProperty("app.home");
-		Properties props = new Properties();
 		Path home = FileSystems.getDefault().getPath(appHome);
 		Path config = home.resolve("config");
 		Path configFile = config.resolve("config.properties");
 		
 		try {
-			props.load(Files.newInputStream(configFile, StandardOpenOption.READ));
+			properties.load(Files.newInputStream(configFile, StandardOpenOption.READ));
 			Synchronizer.debug("Config file loaded.");
 		} catch(IOException e) {
 			System.err.println("Could not read properties file");
 		}
+		
+		paths = new PathConfiguration(properties);
 	}
 	
 	public static void main(String[] args) {
-		TrayHandler.addTrayIcon();
+		TrayHandler.addTrayIcon(getInstance().paths);
 		
 		executor =
 			    Executors.newSingleThreadScheduledExecutor();
-		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(), 0, 10, TimeUnit.MINUTES);
+		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(getInstance().paths), 0, 10, TimeUnit.MINUTES);
 		
 		ExecutorService watchExec = Executors.newSingleThreadExecutor();
 		try {
-			JsonWatcher watcher = new JsonWatcher();
+			JsonWatcher watcher = new JsonWatcher(getInstance().paths);
 			watchExec.execute(watcher);
 		} catch(IOException e) {
 			System.err.println("Could not fetch watcher service");

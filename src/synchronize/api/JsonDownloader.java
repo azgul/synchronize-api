@@ -13,20 +13,26 @@ import org.apache.commons.io.FileUtils;
 
 public class JsonDownloader implements Runnable {
 	
+	private PathConfiguration paths;
+	
+	public JsonDownloader(PathConfiguration paths) {
+		this.paths = paths;
+	}
+	
 	@Override
 	public void run() {
 		Synchronizer.debug("Downloading json files...");
 		
-		Path data = Synchronizer.getInstance().getDataPath();
-		Path jsonPath = Synchronizer.getInstance().getJsonPath();
+		Path data = paths.getDataPath();
+		Path jsonPath = paths.getJsonPath();
 
 		// Fetch all the paths we need
 		Path filesOld = jsonPath.resolve("files.old.json");
 		Path categoriesOld = jsonPath.resolve("categories.old.json");
 		Path files = jsonPath.resolve("files.json");
 		Path categories = jsonPath.resolve("categories.json");
-		String filesJsonURL = Synchronizer.getInstance().getJsonFilesURL();
-		String categoriesJsonURL = Synchronizer.getInstance().getJsonCategoriesURL();
+		String filesJsonURL = paths.getJsonFilesURL();
+		String categoriesJsonURL = paths.getJsonCategoriesURL();
 		
 		try {
 			// create temp files to enable atomic move operation

@@ -12,10 +12,12 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class JsonWatcher implements Runnable {
 	
 	private WatchService watcher;
+	private PathConfiguration paths;
 	
-	public JsonWatcher() throws IOException {
+	public JsonWatcher(PathConfiguration paths) throws IOException {
+		this.paths = paths;
 		watcher = FileSystems.getDefault().newWatchService();
-		Synchronizer.getInstance().getJsonPath().register(watcher, ENTRY_CREATE);
+		paths.getJsonPath().register(watcher, ENTRY_CREATE);
 	}
 
 	@Override
@@ -41,12 +43,12 @@ public class JsonWatcher implements Runnable {
 					continue;
 				
 				Path filename = (Path)event.context();
-				Path createdFile = Synchronizer.getInstance().getJsonPath().resolve(filename);
+				Path createdFile = paths.getJsonPath().resolve(filename);
 				
 				// parse only the categories and files json files.
-				if(createdFile.equals(Synchronizer.getInstance().getCategoriesPath())) {
+				if(createdFile.equals(paths.getCategoriesPath())) {
 					
-				} else if(createdFile.equals(Synchronizer.getInstance().getFilesPath())) {
+				} else if(createdFile.equals(paths.getFilesPath())) {
 					
 				} else
 					continue;

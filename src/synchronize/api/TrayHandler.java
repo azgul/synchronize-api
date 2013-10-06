@@ -17,16 +17,16 @@ import javax.swing.SwingUtilities;
 
 public class TrayHandler {
 	
-	public static void addTrayIcon() {
+	public static void addTrayIcon(final PathConfiguration paths) {
 		SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                TrayHandler.createAndShowGUI();
+                TrayHandler.createAndShowGUI(paths);
             }
         });
 	}
 	
-	private static void createAndShowGUI() {
-		Path image = Synchronizer.getInstance().getDataPath().resolve("images").resolve("top.png");
+	private static void createAndShowGUI(PathConfiguration paths) {
+		Path image = paths.getImagePath().resolve("top.png");
         //Check the SystemTray support
         if (!SystemTray.isSupported()) {
             System.err.println("SystemTray is not supported");
