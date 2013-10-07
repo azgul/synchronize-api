@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CancellationException;
@@ -19,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import synchronize.model.Category;
 import synchronize.model.SyncFile;
 
 import com.google.gson.Gson;
@@ -30,36 +33,11 @@ public class Synchronizer {
 	private Properties properties;
 	private PathConfiguration paths;
 	
-	private SyncFile[] parseJSON() {
-		Gson gson = new Gson();
-		Path sample = FileSystems.getDefault().getPath("res", "sample-data", "files-sample.json");
-		try {
-			return gson.fromJson(Files.newBufferedReader(sample, Charset.forName("UTF-8")), SyncFile[].class);
-		} catch(Exception e) {
-			e.printStackTrace();
-			return new SyncFile[0];
-		}
-	}
-	
 	private static Synchronizer instance;
 	public static Synchronizer getInstance() {
 		if(instance == null)
 			instance = new Synchronizer();
 		return instance;
-	}
-	
-	public Map<String,SyncFile> getFileMap() {
-		SyncFile[] files = parseJSON();
-		HashMap<String,SyncFile> map = new HashMap<String,SyncFile>();
-		for(SyncFile f : files)
-			map.put(f.getFileName(), f);
-		return map;
-	}
-	
-	public static void debug(String str) {
-		Date date = new Date();
-		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-		System.out.println(formatter.format(date) + ": " + str);
 	}
 	
 	private Synchronizer() {
@@ -119,5 +97,54 @@ public class Synchronizer {
 		}
 		
 		System.exit(0);
+	}
+	
+
+	private SyncFile[] parseFilesJSON(Path files) {
+		Gson gson = new Gson();
+		try {
+			return gson.fromJson(Files.newBufferedReader(files, Charset.forName("UTF-8")), SyncFile[].class);
+		} catch(Exception e) {
+			e.printStackTrace();
+			return new SyncFile[0];
+		}
+	}
+	
+	private Category[] parseCategoriesJSON(Path categories) {
+		Gson gson = new Gson();
+		try {
+			return gson.fromJson(Files.newBufferedReader(categories, Charset.forName("UTF-8")), Category[].class);
+		} catch(Exception e) {
+			e.printStackTrace();
+			return new Category[0];
+		}
+	}
+	
+	private List<SyncFile> getFileDiff() {
+		List<SyncFile> files = Arrays.asList(parseFilesJSON(paths.getFilesPath()));
+		List<SyncFile> oldFiles = Arrays.asList(parseFilesJSON(paths.getOldFilesPath()));
+		files.removeAll(oldFiles);
+		return files;
+	}
+	
+	private List<Category> getCategoryDiff() {
+		List<Category> categories = Arrays.asList(parseCategoriesJSON(paths.getCategoriesPath()));
+		List<Category> oldFiles = Arrays.asList(parseCategoriesJSON(paths.getOldCategoriesPath()));
+		categories.removeAll(oldFiles);
+		return categories;
+	}
+	
+	public Map<String,SyncFile> getFileMap() {
+		SyncFile[] files = parseFilesJSON(paths.getFilesPath());
+		HashMap<String,SyncFile> map = new HashMap<String,SyncFile>();
+		for(SyncFile f : files)
+			map.put(f.getFileName(), f);
+		return map;
+	}
+	
+	public static void debug(String str) {
+		Date date = new Date();
+		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		System.out.println(formatter.format(date) + ": " + str);
 	}
 }

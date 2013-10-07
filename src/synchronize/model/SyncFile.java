@@ -35,4 +35,26 @@ public class SyncFile {
 		}
 		return result;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof SyncFile))
+			return false;
+		
+		SyncFile f = (SyncFile)o;
+		
+		// compare all fields
+		return f.id == id &&
+				f.name.equals(name) &&
+				f.file.equals(file) &&
+				f.version.equals(version) &&
+				f.author.equals(author) &&
+				f.category == category &&
+				f.description.equals(description) &&
+				f.language.equals(language) &&
+				f.tags.equals(tags) &&
+				f.preview.equals(preview) &&
+				f.icon.equals(icon) &&
+				f.image.equals(image);
+	}
 }

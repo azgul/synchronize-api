@@ -24,7 +24,11 @@ public class PathConfiguration {
 	
 	public Path getFilesPath() { return getJsonPath().resolve("files.json"); }
 	
+	public Path getOldFilesPath() { return getJsonPath().resolve("files.old.json"); }
+	
 	public Path getCategoriesPath() { return getJsonPath().resolve("categories.json"); }
+	
+	public Path getOldCategoriesPath() { return getJsonPath().resolve("categories.old.json"); }
 	
 	public Path getImagePath() { return getDataPath().resolve("image"); }
 	

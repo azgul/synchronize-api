@@ -24,13 +24,12 @@ public class JsonDownloader implements Runnable {
 		Synchronizer.debug("Downloading json files...");
 		
 		Path data = paths.getDataPath();
-		Path jsonPath = paths.getJsonPath();
 
 		// Fetch all the paths we need
-		Path filesOld = jsonPath.resolve("files.old.json");
-		Path categoriesOld = jsonPath.resolve("categories.old.json");
-		Path files = jsonPath.resolve("files.json");
-		Path categories = jsonPath.resolve("categories.json");
+		Path filesOld = paths.getOldFilesPath();
+		Path categoriesOld = paths.getOldCategoriesPath();
+		Path files = paths.getFilesPath();
+		Path categories = paths.getCategoriesPath();
 		String filesJsonURL = paths.getJsonFilesURL();
 		String categoriesJsonURL = paths.getJsonCategoriesURL();
 		

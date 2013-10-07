@@ -42,7 +42,13 @@ public class Category {
 	public boolean equals(Object other) {
 		if(!(other instanceof Category))
 			return false;
-		return ((Category)other).getId() == this.id;
+		
+		Category c = ((Category)other);
+		
+		return c.getId() == this.id &&
+				c.parentId == parentId &&
+				c.name.equals(name) &&
+				c.image.equals(image);
 	}
 	
 	public Category() {
