@@ -28,6 +28,9 @@ import com.google.gson.Gson;
 
 public class Synchronizer {
 	
+	private static ExecutorService watchExec;
+	private static JsonWatcher watcher;
+	
 	private static ScheduledExecutorService executor;
 	
 	private Properties properties;
@@ -41,6 +44,7 @@ public class Synchronizer {
 	}
 	
 	private Synchronizer() {
+		Properties properties = new Properties();
 		String appHome = System.getProperty("app.home");
 		Path home = FileSystems.getDefault().getPath(appHome);
 		Path config = home.resolve("config");
@@ -50,7 +54,8 @@ public class Synchronizer {
 			properties.load(Files.newInputStream(configFile, StandardOpenOption.READ));
 			Synchronizer.debug("Config file loaded.");
 		} catch(IOException e) {
-			System.err.println("Could not read properties file");
+			System.err.println("Could not read properties file from " + configFile);
+			Synchronizer.exit();
 		}
 		
 		paths = new PathConfiguration(properties);
@@ -59,18 +64,20 @@ public class Synchronizer {
 	public static void main(String[] args) {
 		TrayHandler.addTrayIcon(getInstance().paths);
 		
-		executor =
-			    Executors.newSingleThreadScheduledExecutor();
-		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(getInstance().paths), 0, 10, TimeUnit.MINUTES);
-		
-		ExecutorService watchExec = Executors.newSingleThreadExecutor();
+		// setup watcher for new json files
+		watchExec = Executors.newSingleThreadExecutor();
 		try {
-			JsonWatcher watcher = new JsonWatcher(getInstance().paths);
+			watcher = new JsonWatcher(getInstance().paths);
 			watchExec.execute(watcher);
 		} catch(IOException e) {
 			System.err.println("Could not fetch watcher service");
 			e.printStackTrace();
 		}
+		
+		// setup json downloader
+		executor =
+			    Executors.newSingleThreadScheduledExecutor();
+		ScheduledFuture<?> future = executor.scheduleWithFixedDelay(new JsonDownloader(getInstance().paths), 0, 10, TimeUnit.MINUTES);
 		
 		try {
 			future.get();
@@ -86,10 +93,14 @@ public class Synchronizer {
 	}
 	
 	public static void exit() {
-		if(executor != null) {
+		if(watcher != null)
+			watcher.exit();
+		if(executor != null && watchExec != null) {
 			executor.shutdown();
+			watchExec.shutdown();
 			try {
 				executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+				watchExec.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 			} catch(InterruptedException e) {
 				System.err.println("Shutdown interrupted...");
 				e.printStackTrace();
@@ -120,17 +131,21 @@ public class Synchronizer {
 		}
 	}
 	
-	private List<SyncFile> getFileDiff() {
+	public List<SyncFile> getFileDiff() {
 		List<SyncFile> files = Arrays.asList(parseFilesJSON(paths.getFilesPath()));
-		List<SyncFile> oldFiles = Arrays.asList(parseFilesJSON(paths.getOldFilesPath()));
-		files.removeAll(oldFiles);
+		if(Files.exists(paths.getOldFilesPath())) {
+			List<SyncFile> oldFiles = Arrays.asList(parseFilesJSON(paths.getOldFilesPath()));
+			files.removeAll(oldFiles);
+		}
 		return files;
 	}
 	
-	private List<Category> getCategoryDiff() {
+	public List<Category> getCategoryDiff() {
 		List<Category> categories = Arrays.asList(parseCategoriesJSON(paths.getCategoriesPath()));
-		List<Category> oldFiles = Arrays.asList(parseCategoriesJSON(paths.getOldCategoriesPath()));
-		categories.removeAll(oldFiles);
+		if(Files.exists(paths.getOldCategoriesPath())) {
+			List<Category> oldFiles = Arrays.asList(parseCategoriesJSON(paths.getOldCategoriesPath()));
+			categories.removeAll(oldFiles);
+		}
 		return categories;
 	}
 	

@@ -59,6 +59,9 @@ public class JsonDownloader implements Runnable {
 					// move temp file to current file
 					Files.move(tempCategories, categories, StandardCopyOption.ATOMIC_MOVE);
 				}
+			} else {
+				// no old file to compare to, just move over
+				Files.move(tempCategories, categories, StandardCopyOption.ATOMIC_MOVE);
 			}
 			
 			// Do the same for the files file as for the category file
@@ -70,9 +73,14 @@ public class JsonDownloader implements Runnable {
 					Files.move(tempFiles, files, StandardCopyOption.ATOMIC_MOVE);
 				}
 			}
+			else {
+				// no old file, just move over
+				Files.move(tempFiles, files, StandardCopyOption.ATOMIC_MOVE);
+			}
+			
 			Synchronizer.debug("Everything cleaned up nicely.");
 		} catch(MalformedURLException e) {
-			System.err.println("The URL was malformed.");
+			System.err.println("Malformed URL: " + e.getMessage());
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
 			System.err.println("Could not find or create the output file.");
